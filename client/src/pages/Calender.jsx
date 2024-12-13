@@ -4,7 +4,7 @@ import * as Yup from "yup";
 import axios from "axios";
 import { toast } from "sonner";
 import { BASE_URL } from "../credentials";
-import "./styles.css"; // Use the updated styles below
+import "./styles.css"; 
 import { useNavigate } from "react-router-dom";
 
 export default function CalendarEvents() {
@@ -18,6 +18,7 @@ export default function CalendarEvents() {
       const { data } = await axios.get(
         `${BASE_URL}/events/get-events/${email}`
       );
+      console.log(data);
       setEvents(data);
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -57,7 +58,7 @@ export default function CalendarEvents() {
   return (
     <div className="modern-container">
       <header className="modern-header">
-       <h1 className="logo-font">G-Calander</h1>
+        <h1 className="logo-font">G-Calander</h1>
         <div className="modern-dropdown">
           <button className="modern-dropdown-button">English (US)</button>
           <ul className="modern-dropdown-content">
@@ -68,34 +69,32 @@ export default function CalendarEvents() {
         </div>
       </header>
       <div className="main-parent">
-        <div class="container">
-          <div class="profile-card">
-            <div class="profile-content">
-              <div class="profile-image">
+        <div className="container">
+          <div className="profile-card">
+            <div className="profile-content">
+              <div className="profile-image">
                 <img src={picture} alt="{name}'s profile" />
               </div>
 
-              <div class="profile-info">
+              <div className="profile-info">
                 <h2>{name}</h2>
               </div>
 
-              <div class="profile-stats">
+              <div className="profile-stats">
                 <h1>{email}</h1>
               </div>
 
-              <div class="action-buttons">
+              <div className="action-buttons">
                 <button onClick={() => navigate('/')}>Back to Login</button>
               </div>
             </div>
-           
           </div>
           <div className="modern-create-event-button">
-              <button onClick={() => setIsPopupOpen(true)}>
-                Create Calendar Event
-              </button>
-            </div>
+            <button onClick={() => setIsPopupOpen(true)}>
+              Create Calendar Event
+            </button>
+          </div>
         </div>
-     
 
         {isPopupOpen && (
           <div className="modern-popup-overlay">
@@ -167,11 +166,9 @@ export default function CalendarEvents() {
             </div>
           </div>
         )}
-          
+
         {events.length > 0 ? (
           <div className="modern-events-section">
-        
-
             <div className="modern-card">
               <div className="modern-card-header">Event List</div>
               <div className="modern-card-content">
@@ -184,13 +181,40 @@ export default function CalendarEvents() {
                     </tr>
                   </thead>
                   <tbody>
-                    {events.map((event, index) => (
-                      <tr key={index}>
-                        <td>{event.name}</td>
-                        <td>{event.date}</td>
-                        <td>{event.time}</td>
-                      </tr>
-                    ))}
+                    {events.map((event, index) => {
+                      const startDate = new Date(event.startTime);
+                      const endDate = new Date(event.endTime);
+
+                     
+                      const formattedDate = new Intl.DateTimeFormat("en-US", {
+                        weekday: "long", 
+                        year: "numeric", 
+                        month: "long", 
+                        day: "numeric", 
+                      }).format(startDate);
+
+                      const formattedStartTime = new Intl.DateTimeFormat("en-US", {
+                        hour: "numeric",
+                        minute: "numeric",
+                        hour12: true,
+                      }).format(startDate);
+
+                      const formattedEndTime = new Intl.DateTimeFormat("en-US", {
+                        hour: "numeric",
+                        minute: "numeric",
+                        hour12: true,
+                      }).format(endDate);
+
+                      const formattedTimeRange = `${formattedStartTime} - ${formattedEndTime}`;
+
+                      return (
+                        <tr key={index}>
+                          <td>{event.name}</td>
+                          <td>{formattedDate}</td>
+                          <td>{formattedTimeRange}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

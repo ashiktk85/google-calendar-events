@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const cors = require('cors')
+const { pollGoogleEvents } = require('./controllers/eventController');
 
 dotenv.config();
 const app = express();
@@ -27,5 +28,9 @@ mongoose.connect(process.env.MONGO_URL)
 
 app.use('/auth', authRoutes);
 app.use('/events', eventRoutes);
+
+
+const POLL_INTERVAL = 1000; 
+setInterval(pollGoogleEvents, POLL_INTERVAL);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

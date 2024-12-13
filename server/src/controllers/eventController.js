@@ -1,34 +1,69 @@
-const axios = require('axios');
-const User = require('../models/user');
 const { google } = require('googleapis');
-const dotenv = require('dotenv');
-const Event = require('../models/events');
-const crypto = require('crypto');
-const { default: fetchEventFromGoogle } = require('../utils/fetchEventFromGoogle');
-const { default: verifyGoogleNotification } = require('../utils/verifyGoogleNotification');
-const saveNewEvent = require('../utils/saveEvent');
-const updateEventInDatabase = require('../utils/updateEventDB');
-const deleteEventFromDatabase = require('../utils/deleteEventDB');
-dotenv.config();
+const CalendarEvent = require('../models/events')
+const User = require('../models/user');
+const fetchEventsFromGoogle = require('../utils/fetchEventsFromGoogle');
+const oauth2Client = require('../utils/googleAuth');
 
-const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    'http://localhost:5173'
-);
+// const createCalendarEvent = async (req, res) => {
+//     try {
+//         const { email, values } = req.body;
+//         const user = await User.findOne({ email });
+//         if (!user) return res.status(404).json({ message: 'User not found' });
+
+//         oauth2Client.setCredentials({ refresh_token: user.refreshToken });
+//         const calendar = google.calendar('v3');
+
+//         const eventResponse = await calendar.events.insert({
+//             auth: oauth2Client,
+//             calendarId: 'primary',
+//             requestBody: {
+//                 summary: values.name,
+//                 start: { dateTime: values.startDateTime, timeZone: 'America/Los_Angeles' },
+//                 end: { dateTime: values.endDateTime, timeZone: 'America/Los_Angeles' },
+//             },
+//         });
+
+//         const newEvent = new CalendarEvent({
+//             email,
+//             googleEventId: eventResponse.data.id,
+//             name: values.name,
+//             startDateTime: values.startDateTime,
+//             endDateTime: values.endDateTime,
+//         });
+//         await newEvent.save();
+
+//         res.status(201).json(newEvent);
+//     } catch (error) {
+//         console.error('Error creating event:', error.message);
+//         res.status(500).json({ message: 'Event creation failed' });
+//     }
+// };
 
 const createCalendarEvent = async (req, res) => {
     try {
         const { email, values } = req.body;
+        const existingEvent = await CalendarEvent.findOne({
+            email,
+            name: values.name,
+            date: values.date,
+            time: values.time,
+        });
+
+        if (existingEvent) {
+            return res.status(400).json({ message: 'Event already exists' });
+        }
 
         const user = await User.findOne({ email });
-        
-        oauth2Client.setCredentials({ refresh_token: user?.refreshToken });
+        if (!user?.refreshToken) {
+            return res.status(400).json({ message: 'No refresh token found for the user' });
+        }
+
+        oauth2Client.setCredentials({ refresh_token: user.refreshToken });
 
         const calendar = google.calendar('v3');
         const response = await calendar.events.insert({
             auth: oauth2Client,
-            calendarId: "primary",
+            calendarId: 'primary',
             requestBody: {
                 summary: values.name,
                 colorId: '9',
@@ -43,15 +78,19 @@ const createCalendarEvent = async (req, res) => {
             },
         });
 
-        const event = new Event({
-            email: email,
+        const googleEventId = response.data.id;
+        const event = new CalendarEvent({
+            email,
             name: values.name,
             date: values.date,
             time: values.time,
+            startTime: new Date(`${values.date}T${values.time}:00`).toISOString(),
+            endTime: new Date(new Date(`${values.date}T${values.time}:00`).getTime() + 60 * 60 * 1000).toISOString(),
+            googleEventId,
         });
 
         await event.save();
-        console.log("Created event in calendar and database.");
+        console.log("Created event in calendar and database with Google ID:", googleEventId);
 
         res.status(201).json(true);
     } catch (error) {
@@ -60,44 +99,55 @@ const createCalendarEvent = async (req, res) => {
     }
 };
 
+
+
 const getEvents = async (req, res) => {
     try {
         const { email } = req.params;
-        const events = await Event.find({ email });
+        const events = await CalendarEvent.find({ email });
         res.status(200).json(events);
     } catch (error) {
-        console.error('Error during getting events:', error.message);
-        res.status(500).json({ message: 'Getting events failed' });
+        console.error('Error fetching events:', error.message);
+        res.status(500).json({ message: 'Failed to fetch events' });
     }
 };
 
+const pollGoogleEvents = async () => {
+    const users = await User.find({});
+    for (const user of users) {
+        oauth2Client.setCredentials({ refresh_token: user.refreshToken });
+    
+        const googleEvents = await fetchEventsFromGoogle(oauth2Client);
 
-const googleCalendarWebhook = async (req, res) => {
-    const { headers, body } = req;
-    if (!verifyGoogleNotification(headers, body)) {
-        return res.status(400).send('Invalid webhook notification');
-    }
-    const eventData = body;
+        for (const event of googleEvents) {
 
-    try {
-        const { email, eventId, status } = eventData;
+            if (!event.summary) {
+  
+                continue;
+            }
 
-        if (status === 'updated') {
-            const event = await fetchEventFromGoogle(eventId, email);
-            await updateEventInDatabase(event);
-        } else if (status === 'created') {
-            const event = await fetchEventFromGoogle(eventId, email);
-            await saveNewEvent(event);
-        } else if (status === 'deleted') {
-            await deleteEventFromDatabase(eventId, email);
+       
+            const existingEvent = await CalendarEvent.findOne({ googleEventId: event.googleEventId });
+            if (!existingEvent) {
+
+                await CalendarEvent.create({
+                    googleEventId: event.googleEventId,
+                    name: event.summary, 
+                    startTime: event.startTime,
+                    endTime: event.endTime,
+                    email: user.email,
+                });
+            } else {
+
+                await CalendarEvent.updateOne(
+                    { googleEventId: event.googleEventId },
+                    { googleEventId: event.googleEventId, name: event.summary, startTime: event.startTime, endTime: event.endTime, email: user.email }
+                );
+            }
         }
-
-        res.status(200).send('Event change processed');
-    } catch (error) {
-        console.error('Error processing calendar event notification:', error);
-        res.status(500).send('Error processing event notification');
     }
 };
 
 
-module.exports = { createCalendarEvent, getEvents, googleCalendarWebhook };
+
+module.exports = { createCalendarEvent, getEvents, pollGoogleEvents };
