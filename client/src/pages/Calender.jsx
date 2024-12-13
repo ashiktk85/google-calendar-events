@@ -1,34 +1,24 @@
-import { useEffect, useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { X } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { IoLanguage } from "react-icons/io5"
-import { Formik, Form, Field, ErrorMessage } from "formik"
-import * as Yup from "yup"
-import { BASE_URL } from '../credentials'
-import { toast } from 'sonner'
-import axios from 'axios'
+import { useEffect, useState } from "react";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+import axios from "axios";
+import { toast } from "sonner";
+import { BASE_URL } from "../credentials";
+import "./styles.css"; // Use the updated styles below
+import { useNavigate } from "react-router-dom";
 
 export default function CalendarEvents() {
-  const { name, email } = JSON.parse(localStorage.getItem('user'));
+  const { name, email, picture } = JSON.parse(localStorage.getItem("user"));
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [events, setEvents] = useState([]);
-  
+  const navigate = useNavigate();
+
   const fetchEvents = async () => {
     try {
-      const {data} = await axios.get(`${BASE_URL}/events/get-events/${email}`)
-      setEvents(data)
+      const { data } = await axios.get(
+        `${BASE_URL}/events/get-events/${email}`
+      );
+      setEvents(data);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -38,22 +28,22 @@ export default function CalendarEvents() {
     fetchEvents();
   }, []);
 
-  const initialValues = { name: '', date: '', time: '' };
-  
+  const initialValues = { name: "", date: "", time: "" };
+
   const validationSchema = Yup.object({
     name: Yup.string().required("Event name is required"),
     date: Yup.string().required("Date is required"),
     time: Yup.string().required("Time is required"),
   });
-  
+
   const handleSubmit = async (values, { resetForm }) => {
     try {
       const response = await axios.post(`${BASE_URL}/events/create`, {
-       values ,email
+        values,
+        email,
       });
 
       if (response.data) {
-       
         await fetchEvents();
         resetForm();
         setIsPopupOpen(false);
@@ -63,122 +53,153 @@ export default function CalendarEvents() {
       console.error("Error creating event:", error);
     }
   };
-  
+
   return (
-    <div className="container mx-auto p-4">
-      <header className="flex items-center justify-between p-4 bg-black shadow-sm mb-10 rounded-md text-white">
-        <div className="w-24 h-8 bg-gray-200 rounded-md" />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <IoLanguage className="w-5 h-5 mr-2" />
-              English (US)
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>English (US)</DropdownMenuItem>
-            <DropdownMenuItem>Español</DropdownMenuItem>
-            <DropdownMenuItem>Français</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <div className="modern-container">
+      <header className="modern-header">
+       <h1 className="logo-font">G-Calander</h1>
+        <div className="modern-dropdown">
+          <button className="modern-dropdown-button">English (US)</button>
+          <ul className="modern-dropdown-content">
+            <li>English (US)</li>
+            <li>Español</li>
+            <li>Français</li>
+          </ul>
+        </div>
       </header>
-      
-      <div className="flex justify-center">
-        <Card className="mb-8 w-1/4 items-center">
-          <CardHeader>
-            <CardTitle>Profile Card</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-4">
-              <div>
-                <h2 className="text-xl font-bold">{name}</h2>
-                <p className="text-gray-500">{email}</p>
+      <div className="main-parent">
+        <div class="container">
+          <div class="profile-card">
+            <div class="profile-content">
+              <div class="profile-image">
+                <img src={picture} alt="{name}'s profile" />
+              </div>
+
+              <div class="profile-info">
+                <h2>{name}</h2>
+              </div>
+
+              <div class="profile-stats">
+                <h1>{email}</h1>
+              </div>
+
+              <div class="action-buttons">
+                <button onClick={() => navigate('/')}>Back to Login</button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="flex justify-center">
-        <Button onClick={() => setIsPopupOpen(true)} className="bg-black text-white">
-          Create Calendar Event
-        </Button>
-      </div>
-      
-      {isPopupOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-96 bg-white">
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
+           
+          </div>
+          <div className="modern-create-event-button">
+              <button onClick={() => setIsPopupOpen(true)}>
                 Create Calendar Event
-                <Button variant="ghost" size="icon" onClick={() => setIsPopupOpen(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Formik
-                initialValues={initialValues}
-                validationSchema={validationSchema}
-                onSubmit={handleSubmit}
-              >
-                {({ isSubmitting }) => (
-                  <Form className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Event Name</Label>
-                      <Field as={Input} id="name" name="name" />
-                      <ErrorMessage name="name" component="div" className="text-red-500" />
-                    </div>
-                    <div>
-                      <Label htmlFor="date">Date</Label>
-                      <Field as={Input} id="date" name="date" type="date" />
-                      <ErrorMessage name="date" component="div" className="text-red-500" />
-                    </div>
-                    <div>
-                      <Label htmlFor="time">Time</Label>
-                      <Field as={Input} id="time" name="time" type="time" />
-                      <ErrorMessage name="time" component="div" className="text-red-500" />
-                    </div>
-                    <Button type="submit" className="w-full bg-black text-white" disabled={isSubmitting}>
-                      Create Event
-                    </Button>
-                  </Form>
-                )}
-              </Formik>
-            </CardContent>
-          </Card>
+              </button>
+            </div>
         </div>
-      )}
-      
-      {events.length > 0 ? (
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Event List</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Event Name</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {events.map((event, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{event.name}</TableCell>
-                    <TableCell>{event.date}</TableCell>
-                    <TableCell>{event.time}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
-        <p className="mt-8 text-center text-black font-bold">No events yet</p>
-      )}
+     
+
+        {isPopupOpen && (
+          <div className="modern-popup-overlay">
+            <div className="modern-popup">
+              <div className="modern-popup-header">
+                <span>Create Calendar Event</span>
+                <button onClick={() => setIsPopupOpen(false)}>X</button>
+              </div>
+              <div className="modern-popup-content">
+                <Formik
+                  initialValues={initialValues}
+                  validationSchema={validationSchema}
+                  onSubmit={handleSubmit}
+                >
+                  {({ isSubmitting }) => (
+                    <Form className="modern-form">
+                      <div className="modern-form-group">
+                        <label htmlFor="name">Event Name</label>
+                        <Field
+                          id="name"
+                          name="name"
+                          className="modern-form-input"
+                        />
+                        <ErrorMessage
+                          name="name"
+                          component="div"
+                          className="modern-form-error"
+                        />
+                      </div>
+                      <div className="modern-form-group">
+                        <label htmlFor="date">Date</label>
+                        <Field
+                          id="date"
+                          name="date"
+                          type="date"
+                          className="modern-form-input"
+                        />
+                        <ErrorMessage
+                          name="date"
+                          component="div"
+                          className="modern-form-error"
+                        />
+                      </div>
+                      <div className="modern-form-group">
+                        <label htmlFor="time">Time</label>
+                        <Field
+                          id="time"
+                          name="time"
+                          type="time"
+                          className="modern-form-input"
+                        />
+                        <ErrorMessage
+                          name="time"
+                          component="div"
+                          className="modern-form-error"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="modern-form-button"
+                        disabled={isSubmitting}
+                      >
+                        Create Event
+                      </button>
+                    </Form>
+                  )}
+                </Formik>
+              </div>
+            </div>
+          </div>
+        )}
+          
+        {events.length > 0 ? (
+          <div className="modern-events-section">
+        
+
+            <div className="modern-card">
+              <div className="modern-card-header">Event List</div>
+              <div className="modern-card-content">
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th>Event Name</th>
+                      <th>Date</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map((event, index) => (
+                      <tr key={index}>
+                        <td>{event.name}</td>
+                        <td>{event.date}</td>
+                        <td>{event.time}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="modern-no-events">No events yet</p>
+        )}
+      </div>
     </div>
   );
 }

@@ -47,21 +47,16 @@ const SignIn = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-      <header className="flex items-center justify-between p-4 bg-white shadow-sm">
-        <div className="w-24 h-8 bg-gray-200 rounded-md" /> 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <IoLanguage className="w-5 h-5 mr-2" />
-              English (US)
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>English (US)</DropdownMenuItem>
-            <DropdownMenuItem>Español</DropdownMenuItem>
-            <DropdownMenuItem>Français</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+         <header className="modern-header">
+       <h1 className="logo-font">G-Calander</h1>
+        <div className="modern-dropdown">
+          <button className="modern-dropdown-button">English (US)</button>
+          <ul className="modern-dropdown-content">
+            <li>English (US)</li>
+            <li>Español</li>
+            <li>Français</li>
+          </ul>
+        </div>
       </header>
       <main className="flex items-center justify-center flex-grow px-4 ">
         <Card className="w-full max-w-md bg-white h-[300px] items-center">
