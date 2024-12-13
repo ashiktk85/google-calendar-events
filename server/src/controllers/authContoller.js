@@ -23,8 +23,11 @@ const googleAuth = async (req, res) => {
         const userInfo = await google.oauth2('v2').userinfo.get({
             auth: oauth2Client,
         });
+console.log(userInfo);
 
-        const { id, name, email } = userInfo.data;
+        const { id, name, email,picture } = userInfo.data;
+        console.log(id, name, email,picture, "kdjd");
+        
         const { access_token, refresh_token, expiry_date } = tokens;
 
         
@@ -37,8 +40,17 @@ const googleAuth = async (req, res) => {
             user.tokenExpiryDate = expiry_date;
 
             await user.save(); 
-            console.log('User updated successfully:', user);
-            return res.status(200).json(user); 
+            const userData = {
+                googleId: id,
+                name,
+                email ,
+                picture : picture,
+                accessToken: access_token,
+                refreshToken: refresh_token,
+                tokenExpiryDate: expiry_date,
+            }
+            console.log('User updated successfully:', userData);
+            return res.status(200).json(userData); 
         } else {
             
             user = new User({
@@ -51,8 +63,17 @@ const googleAuth = async (req, res) => {
             });
 
             await user.save(); 
-            console.log('User created successfully:', user);
-            return res.status(201).json(user); 
+            const userData = {
+                googleId: id,
+                name,
+                email ,
+                picture : picture,
+                accessToken: access_token,
+                refreshToken: refresh_token,
+                tokenExpiryDate: expiry_date,
+            }
+            console.log('User created successfully:', userData);
+            return res.status(201).json(userData); 
         }
 
     } catch (error) {
