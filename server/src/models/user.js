@@ -25,6 +25,23 @@ const userSchema = new mongoose.Schema({
     tokenExpiryDate: {
         type: Date,
     },
+   
+    webhookChannelId: {
+        type: String,
+        sparse: true,  
+    },
+    webhookResourceId: {
+        type: String,
+    },
+    webhookExpiration: {
+        type: Date,
+    },
+    lastSyncTime: {
+        type: Date,
+        default: Date.now,
+    }
 }, { timestamps: true });
+
+userSchema.index({ webhookChannelId: 1 });
 
 module.exports = mongoose.model('User', userSchema);

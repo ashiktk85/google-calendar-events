@@ -26,7 +26,7 @@ const googleAuth = async (req, res) => {
 console.log(userInfo);
 
         const { id, name, email,picture } = userInfo.data;
-        console.log(id, name, email,picture, "kdjd");
+        // console.log(id, name, email,picture, "kdjd");
         
         const { access_token, refresh_token, expiry_date } = tokens;
 
@@ -49,7 +49,7 @@ console.log(userInfo);
                 refreshToken: refresh_token,
                 tokenExpiryDate: expiry_date,
             }
-            console.log('User updated successfully:', userData);
+            // console.log('User updated successfully:', userData);
             return res.status(200).json(userData); 
         } else {
             
@@ -72,7 +72,7 @@ console.log(userInfo);
                 refreshToken: refresh_token,
                 tokenExpiryDate: expiry_date,
             }
-            console.log('User created successfully:', userData);
+            // console.log('User created successfully:', userData);
             return res.status(201).json(userData); 
         }
 

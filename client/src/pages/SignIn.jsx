@@ -16,7 +16,7 @@ const SignIn = () => {
     
     const handleGoogleAuth = useGoogleLogin({
       onSuccess: async (codeResponse) => {
-          console.log(codeResponse);
+          console.log(codeResponse);    
   
           const { code } = codeResponse;
           try {

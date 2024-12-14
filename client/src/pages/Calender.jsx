@@ -16,7 +16,7 @@ export default function CalendarEvents() {
   const fetchEvents = async () => {
     try {
       const { data } = await axios.get(
-        `${BASE_URL}/events/get-events/${email}`
+        ` http://localhost:3001/events/get-events/${email}`
       );
       console.log(data);
       setEvents(data);
@@ -183,7 +183,7 @@ export default function CalendarEvents() {
                   <tbody>
                     {events.map((event, index) => {
                       const startDate = new Date(event.startTime);
-                      const endDate = new Date(event.endTime);
+                      const endDate = new Date(event.endTime);  
 
                      
                       const formattedDate = new Intl.DateTimeFormat("en-US", {
